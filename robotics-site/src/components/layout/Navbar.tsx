@@ -40,11 +40,15 @@ export default function Navbar() {
           onClick={() => setOpen(false)}
         >
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white shadow-soft">
-            <Bot className="h-6 w-6" />
+            <img
+              src="/logoWhite.png"
+              alt="Robotics Club Logo"
+              className="h-10 w-10"
+            />
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-              Rwanda Coding Academy
+              RCA
             </p>
             <p className="text-lg font-bold text-text-primary">
               Robotics Club

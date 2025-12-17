@@ -72,7 +72,7 @@ export default function HomePage() {
                 <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-6 backdrop-blur">
                   <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-white">
-                      <Sparkles className="h-6 w-6" />
+                      <img src="/logoWhite.png" className="h-10 w-10" />
                     </div>
                     <div>
                       <p className="text-sm text-slate-200">Project Spotlight</p>
