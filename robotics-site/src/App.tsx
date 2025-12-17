@@ -1,0 +1,33 @@
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Footer from './components/layout/Footer'
+import Navbar from './components/layout/Navbar'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
+import EventsPage from './pages/EventsPage'
+import GalleryPage from './pages/GalleryPage'
+import HomePage from './pages/HomePage'
+import ProjectsPage from './pages/ProjectsPage'
+import TeamPage from './pages/TeamPage'
+
+function App() {
+  return (
+    <div className="min-h-screen bg-background text-text-primary">
+      <Navbar />
+      <main className="pt-24 pb-16">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/team" element={<TeamPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  )
+}
+
+export default App
