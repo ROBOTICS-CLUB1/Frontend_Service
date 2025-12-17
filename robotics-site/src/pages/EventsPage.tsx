@@ -1,0 +1,75 @@
+import { Calendar, MapPin, Trophy } from 'lucide-react'
+import { Card } from '../components/ui/Card'
+import { Section } from '../components/ui/Section'
+import { events } from '../data/content'
+
+export default function EventsPage() {
+  const upcoming = events.filter((event) => event.status === 'upcoming')
+  const past = events.filter((event) => event.status === 'past')
+
+  return (
+    <>
+      <Section
+        title="Events & Competitions"
+        eyebrow="Compete, demo, learn"
+        description="From national expos to hackathons, we showcase robotics that solve real problems."
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
+          {upcoming.map((event) => (
+            <Card
+              key={event.id}
+              className="p-6 transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="flex items-center justify-between">
+                <div className="inline-flex items-center gap-2 rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-primary">
+                  <Calendar className="h-4 w-4" />
+                  Upcoming
+                </div>
+                <p className="text-sm font-semibold text-text-primary">
+                  {event.date}
+                </p>
+              </div>
+              <h3 className="mt-3 text-xl font-bold text-text-primary">
+                {event.title}
+              </h3>
+              <p className="mt-2 text-sm text-text-muted leading-relaxed">
+                {event.description}
+              </p>
+              <div className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-text-primary">
+                <MapPin className="h-4 w-4" />
+                {event.location}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </Section>
+
+      <Section
+        title="Past Highlights"
+        eyebrow="What we've done"
+        description="We document what worked, what failed, and how to improve for the next competition."
+      >
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {past.map((event) => (
+            <Card key={event.id} className="p-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-text-muted">
+                <Trophy className="h-4 w-4 text-primary" />
+                {event.date}
+              </div>
+              <h3 className="mt-2 text-lg font-bold text-text-primary">
+                {event.title}
+              </h3>
+              <p className="mt-2 text-sm text-text-muted leading-relaxed">
+                {event.description}
+              </p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                {event.location}
+              </p>
+            </Card>
+          ))}
+        </div>
+      </Section>
+    </>
+  )
+}
+
