@@ -9,17 +9,17 @@ export const navLinks = [
   { label: 'Contact', path: '/contact' },
   { label: 'Login', path: '/login' },
 ]
-
+// Need to replaced with the real main tags from the backend
 export type ProjectCategory = 'AI' | 'Hardware' | 'IoT' | 'Software'
-
+// Another one for sub tags if needed
 export const projects = [
   {
     id: 'p1',
-    title: 'Autonomous Line-Follower Rover',
+    title: 'Blinking LED',
     description:
-      'Edge-detecting rover using computer vision to navigate complex courses with dynamic speed control.',
+      'Traffic light system using Arduino uno and LEDS for real-time object detection and movement control.',
     category: 'Hardware' as ProjectCategory,
-    stack: ['Raspberry Pi', 'OpenCV', 'Python', 'Motor Control'],
+    stack: ['Arduino uno', 'Diodes', 'C++'],
   },
   {
     id: 'p2',
@@ -116,11 +116,6 @@ export const team = [
     bio: 'Designs circuits and motion systems for rovers, robotic arms, and IoT labs.',
   },
   {
-    name: 'Diane Iradukunda',
-    role: 'Software Lead',
-    bio: 'Architects control software and cloud dashboards with modern web tooling.',
-  },
-  {
     name: 'Louis Miguel',
     role: 'Research & Vision',
     bio: 'Builds computer vision models and evaluates performance in lab settings.',
@@ -212,34 +207,34 @@ export const gallery = [
 export const adminMembers = [
   {
     id: 'm1',
-    name: 'Aline Uwase',
+    name: 'Bonheur Christian',
     role: 'Admin',
     squad: 'AI & Vision',
     status: 'Active',
   },
   {
     id: 'm2',
-    name: 'Eric Nshimiyimana',
+    name: 'NIYOBYOSE Isaac Precieux',
     role: 'Member',
     squad: 'Hardware',
     status: 'Active',
   },
   {
     id: 'm3',
-    name: 'Diane Iradukunda',
+    name: 'Ntwali Gloria',
     role: 'Member',
     squad: 'Software',
     status: 'Active',
   },
   {
     id: 'm4',
-    name: 'Sandrine Mukamana',
+    name: 'ZIGIRA Miguel',
     role: 'Member',
     squad: 'Operations',
     status: 'Suspended',
   },
 ]
-
+// they need to come from the backend API
 export const joinRequests = [
   {
     id: 'r1',

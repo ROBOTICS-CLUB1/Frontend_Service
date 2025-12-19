@@ -33,7 +33,11 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <Footer />
+      {/* No footer on both login and register pages */}
+      {window.location.pathname !== '/login' &&
+      window.location.pathname !== '/register' && (
+        <Footer />
+      )}
     </div>
   )
 }

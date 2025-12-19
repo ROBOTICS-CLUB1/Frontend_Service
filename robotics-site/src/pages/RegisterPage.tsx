@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { UserPlus, Shield } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { Section } from '../components/ui/Section'
 import { buttonClasses } from '../components/ui/buttonStyles'
@@ -16,11 +16,6 @@ export default function RegisterPage() {
   }
 
   return (
-    <Section
-      title="Register as Member"
-      eyebrow="Join the club"
-      description="Submit your details to request membership. Admins review and approve applications before granting access."
-    >
       <div className="mx-auto max-w-3xl">
         <Card className="p-6 sm:p-8">
           <div className="flex items-center gap-3">
@@ -125,10 +120,6 @@ export default function RegisterPage() {
                   </p>
                 </div>
               </label>
-              <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-xs text-text-muted">
-                <Shield className="h-4 w-4 text-primary" />
-                Admin accounts are created separately. Please contact an existing admin for access.
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -164,7 +155,6 @@ export default function RegisterPage() {
           </form>
         </Card>
       </div>
-    </Section>
   )
 }
 

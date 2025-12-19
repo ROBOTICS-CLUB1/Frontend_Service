@@ -6,7 +6,7 @@ const socials = [
   { icon: Github, label: 'GitHub', href: 'https://github.com/ROBOTICS-CLUB1' },
   { icon: Linkedin, label: 'LinkedIn', href: 'https://linkedin.com' },
   { icon: Instagram, label: 'Instagram', href: 'https://instagram.com/isaacniyo78' },
-  { icon: Mail, label: 'Email', href: 'mailto:club@rca.rw' },
+  { icon: Mail, label: 'Email', href: 'mailto:isaprecieux112@gmail.com' },
 ]
 
 export default function Footer() {
@@ -52,7 +52,7 @@ export default function Footer() {
               className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary"
             >
               <Mail className="h-4 w-4" />
-              club@rca.rw
+              isaprecieux112@gmail.com
             </a>
           </div>
 

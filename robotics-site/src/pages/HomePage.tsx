@@ -51,9 +51,9 @@ export default function HomePage() {
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {[
-                  { label: 'Active Projects', value: '12' },
-                  { label: 'Members', value: '60+' },
-                  { label: 'Competitions', value: '15+' },
+                  { label: 'Active Projects', value: '15+' },
+                  { label: 'Members', value: '30+' },
+                  // { label: 'Competitions', value: '15+' },
                 ].map((item) => (
                   <div
                     key={item.label}
