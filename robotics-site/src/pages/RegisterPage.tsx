@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { UserPlus } from 'lucide-react'
 import { Card } from '../components/ui/Card'
-import { Section } from '../components/ui/Section'
 import { buttonClasses } from '../components/ui/buttonStyles'
 
 export default function RegisterPage() {
