@@ -20,6 +20,10 @@ export const createProjects = async () => {
   return response;
 }
 
+export const getProjectsById = async () => {
+  const response = await apiClient.get<ProjectData[]>('/projects');
+  return response.data;
+}
 
 export const updateProjects = async () => {
   const response = await apiClient.put<ProjectData[]>('/projects');

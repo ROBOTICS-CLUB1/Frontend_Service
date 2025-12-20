@@ -16,7 +16,9 @@ import BlogsPage from './pages/BlogsPage'
 function App() {
   return (
     <div className="min-h-screen bg-background text-text-primary">
-      <Navbar />
+      {window.location.pathname !== '/admin' && (
+        <Navbar />
+      )}
       <main className="pt-24 pb-16">
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -34,8 +36,9 @@ function App() {
         </Routes>
       </main>
       {/* No footer on both login and register pages */}
-      {window.location.pathname !== '/login' &&
-      window.location.pathname !== '/register' && (
+      {window.location.pathname !== '/login' && 
+      window.location.pathname !== '/register' &&
+       window.location.pathname !== '/admin' &&(
         <Footer />
       )}
     </div>
