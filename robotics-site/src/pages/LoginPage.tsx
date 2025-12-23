@@ -6,10 +6,10 @@ import { buttonClasses } from '../components/ui/buttonStyles'
 import { Link } from 'react-router-dom'
 import type { LoginData } from '../apis/authApis'
 import { login } from '../apis/authApis'
-
+import { useNavigate } from 'react-router-dom'
 export default function LoginPage() {
   const [message, setMessage] = useState('')
-
+  const navigate = useNavigate()  
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
@@ -21,7 +21,10 @@ export default function LoginPage() {
     try {
       const response = await login(loginData)
       setMessage('Login successful!')
-      console.log('Login response:', response)
+      if(response.role=="admin"){
+        // Navigate to the /admin portal
+        navigate('/admin')
+      }
       // You can redirect or update UI here on successful login
     } catch (error: any) {
       setMessage(error.response?.data?.message || 'Login failed. Please try again.')
