@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Calendar, Check, Clock, Users, ShieldCheck, Zap, LayoutDashboard, UserCheck, Menu, X, Settings, BookOpen, Search, Bell, MoreVertical, Loader,Tag } from 'lucide-react'
-import { getPendingUsers, approveUser, rejectUser, getDashboardStats, type PendingUser, type DashboardStats } from '../apis/adminApi'
+import { Calendar, Check, Clock, Users, ShieldCheck, Zap, LayoutDashboard, UserCheck, Menu, X, Settings, BookOpen, Search, Bell, MoreVertical, Loader, Tag, Plus, Trash2, Edit2, Image as ImageIcon } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { getPendingUsers, approveUser, rejectUser, getDashboardStats, getSystemTags, createSystemTags, updateSystemTags, deleteSystemTags, type PendingUser, type DashboardStats, type TagData } from '../apis/adminApi'
 import { getMembers, type MemberData } from '../apis/membersApi'
+import { getProjects, createProject, updateProject, deleteProject, type ProjectData } from '../apis/projectApis'
 import toast from 'react-hot-toast'
 
 type TabKey = 'overview' | 'members' | 'requests' | 'events' | 'settings' | 'projects' | 'blogs' | 'Tags'
@@ -14,20 +16,26 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([])
   const [members, setMembers] = useState<MemberData[]>([])
+  const [tags, setTags] = useState<TagData[]>([])
+  const [projects, setProjects] = useState<ProjectData[]>([])
 
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [statsData, pendingData, membersData] = await Promise.all([
+      const [statsData, pendingData, membersData, tagsData, projectsData] = await Promise.all([
         getDashboardStats(),
         getPendingUsers(),
-        getMembers()
+        getMembers(),
+        getSystemTags(),
+        getProjects()
       ])
       setStats(statsData)
       setPendingUsers(pendingData)
       setMembers(membersData)
+      setTags(tagsData)
+      setProjects(projectsData)
     } catch (error) {
       console.error('Failed to fetch admin data:', error)
       toast.error('Failed to load dashboard data')
@@ -56,6 +64,89 @@ export default function AdminDashboard() {
     }
   }
 
+  // Tags Management
+  const [isTagModalOpen, setIsTagModalOpen] = useState(false)
+  const [editingTag, setEditingTag] = useState<TagData | null>(null)
+
+  const handleSaveTag = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const tagData = {
+      name: formData.get('name') as string,
+      color: formData.get('color') as string,
+    } as TagData
+
+    try {
+      if (editingTag) {
+        await updateSystemTags(editingTag._id, tagData)
+        toast.success('Tag updated')
+      } else {
+        await createSystemTags(tagData)
+        toast.success('Tag created')
+      }
+      setIsTagModalOpen(false)
+      setEditingTag(null)
+      fetchData()
+    } catch (error) {
+      console.error('Failed to save tag:', error)
+      toast.error('Failed to save tag')
+    }
+  }
+
+  const handleDeleteTag = async (tagId: string) => {
+    if (!confirm('Are you sure you want to delete this tag?')) return
+    try {
+      await deleteSystemTags(tagId)
+      toast.success('Tag deleted')
+      fetchData()
+    } catch (error) {
+      console.error('Failed to delete tag:', error)
+      toast.error('Failed to delete tag')
+    }
+  }
+
+  // Projects Management
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState<ProjectData | null>(null)
+
+  const handleSaveProject = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    // Determine mainTag as first selected tag or logic
+    // For simplicity, we just pass the formData as is, but we need to ensure the API receives what it expects.
+    // The createProject API expects FormData directly if the backend handles it.
+    // Looking at projectApis.ts: createProject(projectData: FormData)
+
+    try {
+      if (editingProject) {
+        await updateProject(editingProject._id, formData)
+        toast.success('Project updated')
+      } else {
+        await createProject(formData)
+        toast.success('Project created')
+      }
+      setIsProjectModalOpen(false)
+      setEditingProject(null)
+      fetchData()
+    } catch (error) {
+      console.error('Failed to save project:', error)
+      toast.error('Failed to save project')
+    }
+  }
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!confirm('Are you sure you want to delete this project?')) return
+    try {
+      await deleteProject(projectId)
+      toast.success('Project deleted')
+      fetchData()
+    } catch (error) {
+      console.error('Failed to delete project:', error)
+      toast.error('Failed to delete project')
+    }
+  }
+
   const menuItems = [
     { key: 'overview' as TabKey, label: 'Overview', icon: LayoutDashboard },
     { key: 'members' as TabKey, label: 'Members', icon: Users },
@@ -63,7 +154,7 @@ export default function AdminDashboard() {
     { key: 'events' as TabKey, label: 'Events', icon: Calendar },
     { key: 'projects' as TabKey, label: 'Projects', icon: Zap },
     { key: 'blogs' as TabKey, label: 'Blogs', icon: BookOpen },
-    { key:'Tags' as TabKey, label:'Tags',icon:Tag},
+    { key: 'Tags' as TabKey, label: 'Tags', icon: Tag },
     { key: 'settings' as TabKey, label: 'Settings', icon: Settings },
   ]
 
@@ -386,8 +477,203 @@ export default function AdminDashboard() {
                 </div>
               )}
 
+              {/* Tag Management with Animation */}
+              {activeTab === 'Tags' && (
+                <div className="flex flex-col h-full gap-6 overflow-hidden">
+                  <div className="flex items-center justify-between shrink-0">
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900">Tags</h3>
+                      <p className="text-slate-500 text-sm">Manage system-wide tags for projects and posts</p>
+                    </div>
+                    <button
+                      onClick={() => { setEditingTag(null); setIsTagModalOpen(true) }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create Tag
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto min-h-0 pr-2">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                    >
+                      <AnimatePresence mode='popLayout'>
+                        {tags.map((tag) => (
+                          <motion.div
+                            layout
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            key={tag._id}
+                            className="group relative bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all duration-300"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex flex-col gap-2">
+                                <span
+                                  className="inline-flex items-center px-2.5 py-1 rounded-md text-white text-xs font-bold tracking-wide shadow-sm"
+                                  style={{ backgroundColor: tag.color || '#3b82f6' }}
+                                >
+                                  {tag.name}
+                                </span>
+                                <span className="text-xs text-slate-400 font-mono uppercase">{tag.color || 'No Color'}</span>
+                              </div>
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => { setEditingTag(tag); setIsTagModalOpen(true) }}
+                                  className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTag(tag._id)}
+                                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                              <span>ID: ...{tag._id.slice(-6)}</span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+
+                    {tags.length === 0 && (
+                      <div className="h-64 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
+                        <Tag className="h-10 w-10 mb-3 opacity-20" />
+                        <p className="font-medium">No tags found</p>
+                        <p className="text-sm mt-1">Create a new tag to get started</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Projects Management */}
+              {activeTab === 'projects' && (
+                <div className="flex flex-col h-full gap-6 overflow-hidden">
+                  <div className="flex items-center justify-between shrink-0">
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900">Projects</h3>
+                      <p className="text-slate-500 text-sm">Showcase your team's work and innovations</p>
+                    </div>
+                    <button
+                      onClick={() => { setEditingProject(null); setIsProjectModalOpen(true) }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Project
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto min-h-0 pr-2">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                    >
+                      <AnimatePresence mode='popLayout'>
+                        {projects.map((project) => (
+                          <motion.div
+                            layout
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            key={project._id}
+                            className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group h-[360px]"
+                          >
+                            {/* Image Area */}
+                            <div className="h-44 bg-slate-100 relative overflow-hidden">
+                              {project.imageUrl ? (
+                                <img
+                                  src={project.imageUrl}
+                                  alt={project.title}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full text-slate-300">
+                                  <ImageIcon className="h-12 w-12" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                              {/* Floating Tag */}
+                              <div className="absolute top-3 right-3">
+                                <span className="bg-white/90 backdrop-blur-md text-slate-700 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm uppercase tracking-wider">
+                                  {project.mainTag?.name || 'Uncategorized'}
+                                </span>
+                              </div>
+
+                              {/* Hover Actions */}
+                              <div className="absolute bottom-3 right-3 flex gap-2 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                                <button
+                                  onClick={() => { setEditingProject(project); setIsProjectModalOpen(true) }}
+                                  className="p-2 bg-white text-blue-600 rounded-full hover:bg-blue-50 shadow-lg"
+                                  title="Edit"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProject(project._id)}
+                                  className="p-2 bg-white text-red-600 rounded-full hover:bg-red-50 shadow-lg"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Content Area */}
+                            <div className="p-5 flex-1 flex flex-col">
+                              <div className="flex items-center gap-2 mb-2 text-xs text-slate-400">
+                                <Calendar className="h-3 w-3" />
+                                <span>{new Date(project.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <h4 className="font-bold text-slate-900 text-lg mb-2 line-clamp-1" title={project.title}>{project.title}</h4>
+                              <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed mb-4 flex-1">
+                                {project.content}
+                              </p>
+
+                              {/* Mini Tags Footer */}
+                              {project.tags && project.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-auto pt-3 border-t border-slate-50">
+                                  {project.tags.slice(0, 3).map(t => (
+                                    <span key={t._id} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                                      #{t.name}
+                                    </span>
+                                  ))}
+                                  {project.tags.length > 3 && (
+                                    <span className="text-[10px] text-slate-400 px-1">+ {project.tags.length - 3}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+
+                    {projects.length === 0 && (
+                      <div className="h-64 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
+                        <Zap className="h-10 w-10 mb-3 opacity-20" />
+                        <p className="font-medium">No projects found</p>
+                        <p className="text-sm mt-1">Add your first project to verify content</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Placeholders */}
-              {['events', 'projects', 'blogs', 'settings'].includes(activeTab) && (
+              {['events', 'blogs', 'settings'].includes(activeTab) && (
                 <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 border-dashed">
                   <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                     <Settings className="h-8 w-8 text-slate-300" />
@@ -401,6 +687,201 @@ export default function AdminDashboard() {
           )}
         </div>
       </main>
+
+      {/* Tag Modal */}
+      <AnimatePresence>
+        {isTagModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsTagModalOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10"
+            >
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-slate-900">{editingTag ? 'Edit Tag' : 'Create New Tag'}</h3>
+                <button onClick={() => setIsTagModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <form onSubmit={handleSaveTag} className="p-6 space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tag Name</label>
+                  <input
+                    name="name"
+                    defaultValue={editingTag?.name}
+                    required
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    placeholder="e.g. Robotics"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Color</label>
+                  <div className="flex gap-3">
+                    <div className="relative">
+                      <input
+                        type="color"
+                        name="color"
+                        defaultValue={editingTag?.color || '#3b82f6'}
+                        className="h-10 w-16 p-0 border-0 rounded-lg cursor-pointer overflow-hidden"
+                      />
+                    </div>
+                    <input
+                      name="color_text" // using a different name to avoid conflict or handle manually if needed, but for now just display
+                      defaultValue={editingTag?.color || '#3b82f6'}
+                      required
+                      className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none uppercase font-mono"
+                      pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+                      placeholder="#3B82F6"
+                      onChange={() => {
+                        // optional: sync with color picker if implementing controlled state
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1.5">Pick a color that stands out.</p>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsTagModalOpen(false)}
+                    className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
+                  >
+                    {editingTag ? 'Save Changes' : 'Create Tag'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Project Modal */}
+      <AnimatePresence>
+        {isProjectModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsProjectModalOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative z-10"
+            >
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <h3 className="text-lg font-bold text-slate-900">{editingProject ? 'Edit Project' : 'Add New Project'}</h3>
+                <button onClick={() => setIsProjectModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <form onSubmit={handleSaveProject} className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Title</label>
+                  <input
+                    name="title"
+                    defaultValue={editingProject?.title}
+                    required
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    placeholder="e.g. Autonomous Drone V2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Main Category</label>
+                    <select
+                      name="mainTag"
+                      defaultValue={editingProject?.mainTag?._id}
+                      className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
+                    >
+                      <option value="">Select a tag...</option>
+                      {tags.map(tag => (
+                        <option key={tag._id} value={tag._id}>{tag.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Cover</label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        name="image"
+                        accept="image/*"
+                        className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer border border-slate-200 rounded-lg"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
+                  <textarea
+                    name="content"
+                    defaultValue={editingProject?.content}
+                    required
+                    rows={5}
+                    className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all"
+                    placeholder="Detailed description of the project..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Additional Tags</label>
+                  <div className="flex flex-wrap gap-2 p-4 border border-slate-200 rounded-xl bg-slate-50/50 max-h-40 overflow-y-auto">
+                    {tags.map(tag => (
+                      <label key={tag._id} className="inline-flex items-center gap-2 cursor-pointer px-3 py-2 bg-white border border-slate-200 rounded-lg hover:border-blue-300 transition-colors shadow-sm">
+                        <input
+                          type="checkbox"
+                          name="tags"
+                          value={tag._id}
+                          defaultChecked={editingProject?.tags?.some(t => t._id === tag._id)}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                        />
+                        <span className="text-sm font-medium text-slate-700 select-none">{tag.name}</span>
+                      </label>
+                    ))}
+                    {tags.length === 0 && <span className="text-sm text-slate-400 italic">No tags available. Go create some!</span>}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsProjectModalOpen(false)}
+                    className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
+                  >
+                    {editingProject ? 'Update Project' : 'Create Project'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }

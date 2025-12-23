@@ -37,6 +37,12 @@ export interface MemberData {
   membershipRequestedAt: string;
   bio?: string;
 }
+
+export interface TagData {
+  _id: string;
+  name: string;
+  color: string;
+}
 export const getPendingUsers = async () => {
   const response = await apiClient.get<PendingUser[]>('/admin/users/pending');
   return response.data;
@@ -61,20 +67,20 @@ export const getSystemTags = async()=> {
   const response = await apiClient.get('/admin/tags');
   return response.data;
 }
-export const getSystemTagById = async() => {
-  const response = await apiClient.get('/admin/tags/:id');
+export const getSystemTagById = async(tagId: string) => {
+  const response = await apiClient.get(`/admin/tags/${tagId}`);
   return response.data;
 }
 
-export const createSystemTags = async()=> {
-  const response = await apiClient.post('/admin/tags');
+export const createSystemTags = async(tagData: TagData)=> {
+  const response = await apiClient.post('/admin/tags' , tagData );
   return response.data;
 }
-export const updateSystemTags = async()=> {
-  const response = await apiClient.patch('/admin/tags/');
+export const updateSystemTags = async(tagId: string, tagData: TagData)=> {
+  const response = await apiClient.patch(`/admin/tags/${tagId}` , tagData);
   return response.data;
 }
-export const deleteSystemTags = async()=> {
-  const response = await apiClient.delete('/admin/tags');
+export const deleteSystemTags = async(tagId: string)=> {
+  const response = await apiClient.delete(`/admin/tags/${tagId}`);
   return response.data;
 }
