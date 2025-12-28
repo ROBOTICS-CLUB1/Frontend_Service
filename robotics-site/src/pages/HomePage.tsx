@@ -1,12 +1,32 @@
 import { ArrowRight, Sparkles, Cpu, Shield, Calendar } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { projects, whyRobotics, events } from '../data/content'
+import { useEffect, useState } from 'react'
+import { whyRobotics, events } from '../data/content'
+import { getProjects, type ProjectData } from '../apis/projectApis'
 import { Card } from '../components/ui/Card'
 import { Section } from '../components/ui/Section'
 import { buttonClasses } from '../components/ui/buttonStyles'
 
 export default function HomePage() {
+  const [projects, setProjects] = useState<ProjectData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const data = await getProjects()
+        setProjects(data)
+      } catch (error) {
+        console.error('Failed to fetch projects:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProjects()
+  }, [])
+
   const featuredProjects = projects.slice(0, 3)
   const upcomingEvents = events.filter((event) => event.status === 'upcoming')
 
@@ -108,38 +128,58 @@ export default function HomePage() {
         description="From AI vision to IoT sensor networks, explore the engineering work powering our competitions and demos."
       >
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {featuredProjects.map((project) => (
-            <motion.div
-              key={project.id}
-              whileHover={{ y: -4 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            >
-              <Card className="h-full overflow-hidden border-slate-200/80">
-                <div className="h-36 bg-gradient-to-br from-primary/10 via-accent/20 to-white" />
-                <div className="space-y-3 p-6">
-                  <div className="inline-flex rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-primary">
-                    {project.mainTag}
+          {isLoading ? (
+            <div className="col-span-full py-12 text-center text-text-muted">
+              Loading projects...
+            </div>
+          ) : featuredProjects.length > 0 ? (
+            featuredProjects.map((project) => (
+              <motion.div
+                key={project._id}
+                whileHover={{ y: -4 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              >
+                <Card className="h-full overflow-hidden border-slate-200/80">
+                  <div
+                    className="h-36 bg-cover bg-center bg-no-repeat"
+                    style={{
+                      backgroundImage: project.imageUrl ? `url(${project.imageUrl})` : undefined,
+                      backgroundColor: !project.imageUrl ? '#f1f5f9' : undefined
+                    }}
+                  >
+                    {!project.imageUrl && (
+                      <div className="h-full w-full bg-gradient-to-br from-primary/10 via-accent/20 to-white" />
+                    )}
                   </div>
-                  <h3 className="text-xl font-bold text-text-primary">
-                    {project.title}
-                  </h3>
-                  <p className="text-sm text-text-muted leading-relaxed">
-                    {project.description}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {project.tags.map((tech) => (
-                      <span
-                        key={tech}
-                        className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-text-muted"
-                      >
-                        {tech}
-                      </span>
-                    ))}
+                  <div className="space-y-3 p-6">
+                    <div className="inline-flex rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-primary">
+                      {project.mainTag.name}
+                    </div>
+                    <h3 className="text-xl font-bold text-text-primary">
+                      {project.title}
+                    </h3>
+                    <p className="text-sm text-text-muted leading-relaxed line-clamp-3">
+                      {project.content}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {project.tags.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag._id}
+                          className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-text-muted"
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full py-12 text-center text-text-muted">
+              No projects found.
+            </div>
+          )}
         </div>
       </Section>
 
@@ -215,29 +255,39 @@ export default function HomePage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {featuredProjects.map((project) => (
             <motion.div
-              key={project.id}
+              key={project._id}
               whileHover={{ y: -4 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             >
               <Card className="h-full overflow-hidden border-slate-200/80">
-                <div className="h-36 bg-gradient-to-br from-primary/10 via-accent/20 to-white" />
+                <div
+                  className="h-36 bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage: project.imageUrl ? `url(${project.imageUrl})` : undefined,
+                    backgroundColor: !project.imageUrl ? '#f1f5f9' : undefined
+                  }}
+                >
+                  {!project.imageUrl && (
+                    <div className="h-full w-full bg-gradient-to-br from-primary/10 via-accent/20 to-white" />
+                  )}
+                </div>
                 <div className="space-y-3 p-6">
                   <div className="inline-flex rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-primary">
-                    {project.mainTag}
+                    {project.mainTag.name}
                   </div>
                   <h3 className="text-xl font-bold text-text-primary">
                     {project.title}
                   </h3>
-                  <p className="text-sm text-text-muted leading-relaxed">
-                    {project.description}
+                  <p className="text-sm text-text-muted leading-relaxed line-clamp-3">
+                    {project.content}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {project.tags.map((tech) => (
+                    {project.tags.slice(0, 3).map((tag) => (
                       <span
-                        key={tech}
+                        key={tag._id}
                         className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-text-muted"
                       >
-                        {tech}
+                        {tag.name}
                       </span>
                     ))}
                   </div>
